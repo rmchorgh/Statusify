@@ -9,7 +9,7 @@ import AppKit
 
 class StatusBarController {
     private var statusBar: NSStatusBar
-    private(set) var statusItem: NSStatusItem
+    static private(set) var statusItem: NSStatusItem? = nil
     private(set) var popover: NSPopover
     
     init(_ popover: NSPopover) {
@@ -18,14 +18,21 @@ class StatusBarController {
         
         // MARK: - i dont know what sqlen looks like, maybe try variableLength
         
-        statusItem = statusBar.statusItem(withLength: NSStatusItem.squareLength)
-        
-        if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "Statusify")
+        Self.statusItem = statusBar.statusItem(withLength: NSStatusItem.variableLength)
+     
+        Self.updateSong()
+    }
+    
+    static func updateSong(_ song: String = "Statusify") {
+        if Self.statusItem != nil, let button = Self.statusItem!.button {
             button.action = #selector(showApp(sender: ))
+            button.title = song
             button.target = self
+            
+            button.updateLayer()
         }
     }
+    
     
     @objc
     func showApp(sender: AnyObject) {
@@ -33,7 +40,7 @@ class StatusBarController {
             popover.performClose(nil)
         }
         else {
-            popover.show(relativeTo: statusItem.button!.bounds, of: statusItem.button!, preferredEdge: .maxY)
+            popover.show(relativeTo: Self.statusItem!.button!.bounds, of: Self.statusItem!.button!, preferredEdge: .maxY)
         }
     }
 }

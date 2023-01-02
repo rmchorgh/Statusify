@@ -63,7 +63,7 @@ struct PopoverView: View {
     
     func getInformation() {
         let spt = "https://api.spotify.com/v1/me/player/currently-playing"
-        let key = "BQBM6XR8ra-l-9LZp4X_r40NIeNsXU8DKTMNPLFsRPULVKVf4VzT1NsYagFOq9pICGuGYcRMxB3kR9udRZbQRyYhJt5Jb7aFHcnedHXYg3xdZKh8nqcWnveR7lv2yR0giZ3dhPRGRnwVwJYzzLKkzGV1fDDNmQ2vIQ15P1GoHb2d7TI"
+        let key = "BQDd5-FonMbHe9pfnswfqpq01awVtKNAaCAPmjVTgYGkjJIn4HF6kVikWHGXRxPsRw0Vfkws4s282K4dbMWKdNNAh4yYSUs9FCLOBnTYIR1a2hvhCdZXxZsOk_6SNWYx2t7IqLfNbYtGDUi6CTK3qzMV1fOz460VFAcEz4dsQVie1zo"
         
         var req = URLRequest(url: URL(string: spt)!)
         req.httpMethod = "GET"
@@ -94,29 +94,20 @@ struct PopoverView: View {
             }
             
             do {
-                let json = try JSONDecoder().decode(SpotifyResponse.self, from: data)
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                 
-                artist = json.artists.map({ a in a.name }).joined(separator: ", ")
-                title = json.name
-                url = json.albumArt.last!.image
+                let sr = try SpotifyResponse(json!)
+                
+                artist = sr.artists.map({ a in a.name }).joined(separator: ", ")
+                title = sr.name
+                url = sr.albumArt.last!.image
                 
                 content = artist!
-            } catch let DecodingError.dataCorrupted(context) {
-                print(context)
-            } catch let DecodingError.keyNotFound(key, context) {
-                print("Key '\(key)' not found:", context.debugDescription)
-                print("codingPath:", context.codingPath)
-            } catch let DecodingError.valueNotFound(value, context) {
-                print("Value '\(value)' not found:", context.debugDescription)
-                print("codingPath:", context.codingPath)
-            } catch let DecodingError.typeMismatch(type, context)  {
-                print("Type '\(type)' mismatch:", context.debugDescription)
-                print("codingPath:", context.codingPath)
             }
             catch {
                 print("Couldn't decode JSON.")
                 print(error)
-                print(String(data: data, encoding: .utf8)!)
+//                print(String(data: data, encoding: .utf8)!)
             }
             
         }

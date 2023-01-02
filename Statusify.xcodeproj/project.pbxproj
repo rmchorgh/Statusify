@@ -14,7 +14,6 @@
 		7D93B44A2962028200EBFB62 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D93B4492962028200EBFB62 /* AppDelegate.swift */; };
 		7D93B44C2962031F00EBFB62 /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D93B44B2962031F00EBFB62 /* PopoverView.swift */; };
 		7D93B44E2962037C00EBFB62 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D93B44D2962037C00EBFB62 /* StatusBarController.swift */; };
-		7DA10B382962562C0082B9D3 /* NetworkImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA10B372962562C0082B9D3 /* NetworkImage.swift */; };
 		7DA10B3A29625CC50082B9D3 /* SpotifyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA10B3929625CC50082B9D3 /* SpotifyResponse.swift */; };
 		7DD1476529621DC2008F56BA /* Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD1476429621DC2008F56BA /* Shell.swift */; };
 /* End PBXBuildFile section */
@@ -29,7 +28,6 @@
 		7D93B4492962028200EBFB62 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7D93B44B2962031F00EBFB62 /* PopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverView.swift; sourceTree = "<group>"; };
 		7D93B44D2962037C00EBFB62 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
-		7DA10B372962562C0082B9D3 /* NetworkImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkImage.swift; sourceTree = "<group>"; };
 		7DA10B3929625CC50082B9D3 /* SpotifyResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyResponse.swift; sourceTree = "<group>"; };
 		7DD1476429621DC2008F56BA /* Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shell.swift; sourceTree = "<group>"; };
 		7DD1476629622AAD008F56BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -49,8 +47,6 @@
 		7D93B42E2962005600EBFB62 = {
 			isa = PBXGroup;
 			children = (
-				7DA10B3929625CC50082B9D3 /* SpotifyResponse.swift */,
-				7DA10B372962562C0082B9D3 /* NetworkImage.swift */,
 				7D93B4392962005600EBFB62 /* Statusify */,
 				7D93B4382962005600EBFB62 /* Products */,
 			);
@@ -67,6 +63,7 @@
 		7D93B4392962005600EBFB62 /* Statusify */ = {
 			isa = PBXGroup;
 			children = (
+				7DA10B3929625CC50082B9D3 /* SpotifyResponse.swift */,
 				7DD1476629622AAD008F56BA /* Info.plist */,
 				7D93B43A2962005600EBFB62 /* StatusifyApp.swift */,
 				7D93B43C2962005600EBFB62 /* ContentView.swift */,
@@ -166,7 +163,6 @@
 				7D93B44E2962037C00EBFB62 /* StatusBarController.swift in Sources */,
 				7DA10B3A29625CC50082B9D3 /* SpotifyResponse.swift in Sources */,
 				7D93B43B2962005600EBFB62 /* StatusifyApp.swift in Sources */,
-				7DA10B382962562C0082B9D3 /* NetworkImage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +297,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Statusify/Info.plist;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -329,6 +326,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Statusify/Info.plist;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
