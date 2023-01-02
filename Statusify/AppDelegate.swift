@@ -13,9 +13,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBar: StatusBarController?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        Self.popover.contentViewController = NSHostingController(rootView: PopoverView())
+        Self.popover.contentViewController = NSHostingController(rootView: ContentView())
         
-        Self.popover.behavior = .transient
+        Self.popover.behavior = .semitransient
         
         statusBar = StatusBarController(Self.popover)
     }

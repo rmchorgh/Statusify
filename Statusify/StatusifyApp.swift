@@ -13,8 +13,8 @@ struct StatusifyApp: App {
     
     
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        Settings {
+            EmptyView()
         }
     }
 }

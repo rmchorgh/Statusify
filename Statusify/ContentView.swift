@@ -8,11 +8,10 @@
 import SwiftUI
 
 struct ContentView: View {
-    let on = "bolt.fill"
-    let off = "bolt.slash"
-    
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+      
     let spt = "https://api.spotify.com/v1/me/player/"
-    let key = "BQAGGrlxfFNJJ3a3kIuMXfun8Q3Va7FVtb30d5Qj3b2I18XJ17QROFK8QVSBpaghHJCG_A5vk9ekHd2DkzVt-CN9Fr-9ukSIBJ3HAxBWb8ipWJxK0CUKhpeX2QokbGlf_87-geDmqitQaTANmPpnn7v7P_hAcZ_Z6Wq65Lx2x-y-zUyz"
+    let key = "BQCxakbs0px7ushj9dbWPjncd3AlWqv3Bj49hOVqtJHf3T2JwmNRSVjXgCVDL6oqHVRKEOzF5GKrdqrgamSvWM-K5tl4c08zKFb31O49FUIHYYmW6rPnHOMHy-99qzC-Q9aP0ld_L-HJD85x-U0vsOiYURYVj4VsLzcVjArZb5o6sOyn"
     
     @State var serviceRunning = false
     
@@ -22,6 +21,7 @@ struct ContentView: View {
     @State var title: String? = nil
     @State var url: URL? = nil
     @State var playing = false
+    @State var remaining: UInt32? = nil
     
     func isRunning() {
         print("isRunning:")
@@ -49,34 +49,18 @@ struct ContentView: View {
             }
             print(res)
             serviceRunning = false
-            content = ""
-            return
-        }
-        
-        print("Starting")
-        guard let res = try? safeShell("services", "restart", "spotifyd") else {
-            content = "Starting service failed."
-            return
-        }
-        print(res)
-        serviceRunning = true
-        getInformation(true)
-        content = ""
-    }
-    
-    func getInformation(_ test: Bool) {
-        if test {
-            artist = "Maroon 5"
-            title = "Harder To Breathe"
-            url = URL(string: "https://i.scdn.co/image/ab67616d0000b27370150b6fe62a820a13b78bb6")
         }
         else {
-            getInformation()
+            print("Starting")
+            guard let res = try? safeShell("services", "restart", "spotifyd") else {
+                content = "Starting service failed."
+                return
+            }
+            print(res)
+            serviceRunning = true
         }
-        
-        if let title = title, let artist = artist {
-            StatusBarController.updateSong("\(title) - \(artist)")
-        }
+        getInformation()
+        content = ""
     }
     
     func getInformation() {
@@ -115,8 +99,9 @@ struct ContentView: View {
                 
                 artist = sr.artists.map({ a in a.name }).joined(separator: ", ")
                 title = sr.name
-                url = sr.albumArt.first!.image
+                url = sr.albumArt[1].image
                 playing = sr.state
+                remaining = (sr.duration - sr.progress) / 1000
                 
                 content = title!
             }
@@ -181,10 +166,10 @@ struct ContentView: View {
         if url != nil {
             AsyncImage(url: url)
                 .aspectRatio(contentMode: .fit)
+                .frame(width: 300, height: 300)
                 .overlay {
                     LinearGradient(colors: [.black.opacity(0.75), .black.opacity(0.2)], startPoint: .top, endPoint: .bottom)
                 }
-                .frame(width: 200, height: 200)
         }
         else {
             EmptyView()
@@ -205,7 +190,7 @@ struct ContentView: View {
                 Button {
                     toggleService()
                 } label: {
-                    Image(systemName: serviceRunning ? off : on)
+                    Text(serviceRunning ? "Turn Off" : "Turn On")
                         .animation(.easeInOut, value: serviceRunning)
                 }
             }
@@ -225,7 +210,8 @@ struct ContentView: View {
                         play()
                     }
                 } label: {
-                    Image(systemName: "play.fill")
+                    Image(systemName: playing ? "pause" : "play.fill")
+                        .animation(.easeInOut, value: playing)
                 }
                 
                 Button {
@@ -237,9 +223,18 @@ struct ContentView: View {
         }
         .padding()
         .background(albumArt)
-        .frame(width: 200, height: 200)
+        .frame(width: 300, height: 300)
         .onAppear {
             isRunning()
+        }
+        .onReceive(timer) { _ in
+            if remaining == 0 {
+                remaining = nil
+                getInformation()
+            }
+            else if remaining != nil {
+                remaining! -= 1
+            }
         }
     }
 }
