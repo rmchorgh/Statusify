@@ -24,7 +24,7 @@ struct ContentView: View {
     @State var playing = false
     @State var remaining: UInt32? = nil
     
-    @State var restart = false
+    @State var restart = 5
     
     func isRunning() {
         guard let res = try? brew("services") else {
@@ -41,29 +41,6 @@ struct ContentView: View {
             content = "Service not running"
             toggleService()
         }
-    }
-    
-    @discardableResult
-    func loadKey() -> String? {
-        do {
-            let home = FileManager.default.homeDirectoryForCurrentUser.absoluteString.dropFirst(7)
-            let res = try runCommand(main: "/bin/cat", ["\(home)/.config/spotifyd/statusify.key"])
-            key = res
-            print("Key is", res)
-            return res
-        }
-        catch {
-            print(error)
-            content = "There was an error in obtaining the API key."
-            return nil
-        }
-//        guard let res = try? runCommand(main: "cat", ["~/.config/spotifyd/statusify.key"]) else {
-//            content = "There was an error in obtaining the API key."
-//            return nil
-//        }
-//        key = res
-//        print("Key is", res)
-//        return res
     }
     
     func toggleService() {
@@ -89,124 +66,47 @@ struct ContentView: View {
         content = ""
     }
     
-    func getInformation(_ passed: String = "") {
-        var use = passed
-        if passed.isEmpty {
-            use = key
-        }
-        print("Using key", passed)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            var req = URLRequest(url: URL(string: "\(spt)currently-playing")!)
-            req.httpMethod = "GET"
-            req.allHTTPHeaderFields = ["Authorization": "Bearer \(use)"]
-            
-            let task = URLSession.shared.dataTask(with: req) { data, res, err in
-                if let err = err {
-                    print("Couldn't get player information.")
-                    print(err)
-                    return
-                }
-                
-                guard let res = res as? HTTPURLResponse, (200...299).contains(res.statusCode) else {
-                    if res == nil {
-                        print("No result from Spotify.")
-                    }
-                    else {
-                        let res = res as! HTTPURLResponse
-                        print("Spotify returned code \(res.statusCode).")
-                        print(String(data: data!, encoding: .utf8)!)
-                        if res.statusCode == 401 {
-                            content = "Update your Spotify API key."
-                            guard let server = try? keyServer() else {
-                                print("Couldn't start key server.")
-                                content = "Couldn't start key server. Try again later."
-                                return
-                            }
-                            
-                            key = server
-                            print("Got key:\n\t", server)
-                            restart = true
-                        }
-                        
-                    }
-                    return
-                }
-                
-                guard let data = data  else {
-                    print("Couldn't interpret data as non-nil.")
-                    return
-                }
-                
-                do {
-                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                    
-                    let sr = try PlaybackResponse(json!)
-                    
-                    artist = sr.artists.map({ a in a.name }).joined(separator: ", ")
-                    title = sr.name
-                    url = sr.albumArt[1].image
-                    playing = sr.state
-                    remaining = (sr.duration - sr.progress) / 1000
-                    
-                    content = title!
-                }
-                catch {
-                    print("Couldn't decode JSON.")
-                    print(error)
-                }
-                
+    func getInformation() {
+        do {
+            var cur = try requests(.current)
+            print(cur)
+            if cur.contains("The access token expired") {
+                print("Getting new token.")
+                _ = try keyServer()
+                cur = try requests(.current)
             }
             
-            task.resume()
+            let d = JSONDecoder()
+            let v = try d.decode(CurrentlyPlaying.self, from: cur.data(using: .utf8)!)
+            artist = v.artists
+            title = v.name
+            url = URL(string: v.album_art)
+            playing = v.play_state
+            remaining = (v.duration - v.progress) / 1000
+            content = title!
+        }
+        catch {
+            print(error)
         }
     }
     
-    func backward() {
-        mediaControl("previous", "POST")
-    }
-    
-    func play() {
-        mediaControl("play", "PUT")
-        playing = true
-    }
-    
-    func pause() {
-        mediaControl("pause", "PUT")
-        playing = false
-    }
-    
-    func forward() {
-        mediaControl("next", "POST")
-    }
-    
-    func mediaControl(_ dir: String, _ method: String) {
-        var req = URLRequest(url: URL(string: "\(spt)\(dir)")!)
-        req.httpMethod = method
-        req.allHTTPHeaderFields = ["Authorization": "Bearer \(key)"]
-        
-        let task = URLSession.shared.dataTask(with: req) { data, res, err in
-            if let err = err {
-                print("Couldn't get player to \(dir).")
-                print(err)
-                return
+    @discardableResult
+    func mediaControl(_ dir: StatusifyRequest) -> Bool {
+        do {
+            var mc = try requests(dir)
+            print(mc)
+            if mc.contains("The access token expired") {
+                print("Getting new token.")
+                _ = try keyServer()
+                mc = try requests(dir)
             }
-            
-            guard let res = res as? HTTPURLResponse, (200...299).contains(res.statusCode) else {
-                if res == nil {
-                    print("No result from Spotify.")
-                }
-                else {
-                    print("Spotify returned code \((res as! HTTPURLResponse).statusCode).")
-                    print(String(data: data!, encoding: .utf8)!)
-                }
-                return
-            }
-            
             getInformation()
+            return true
         }
-        
-        task.resume()
+        catch {
+            print(error)
+            return false
+        }
     }
     
     let windowDim = 300.0
@@ -251,7 +151,7 @@ struct ContentView: View {
                 Image(systemName: "backward.fill")
                     .button()
                     .onTapGesture {
-                        backward()
+                        mediaControl(.prev)
                     }
                 
                 Image(systemName: playing ? "pause.fill" : "play.fill")
@@ -259,17 +159,21 @@ struct ContentView: View {
                     .animation(.easeInOut, value: playing)
                     .onTapGesture {
                         if playing {
-                            pause()
+                            if mediaControl(.pause) {
+                                playing = false
+                            }
                         }
                         else {
-                            play()
+                            if mediaControl(.play) {
+                                playing = true
+                            }
                         }
                     }
                 
                 Image(systemName: "forward.fill")
                     .button()
                     .onTapGesture {
-                        forward()
+                        mediaControl(.next)
                     }
             }
         }
@@ -277,7 +181,6 @@ struct ContentView: View {
         .background(albumArt)
         .frame(width: 300, height: 300)
         .onAppear {
-            loadKey()
             isRunning()
         }
         .onReceive(timer) { _ in
@@ -287,17 +190,6 @@ struct ContentView: View {
             }
             else if remaining != nil && playing {
                 remaining! -= 1
-            }
-        }
-        .onChange(of: restart) { newValue in
-            if newValue {
-                DispatchQueue.main.async {
-                    restart = false
-                    let k = loadKey()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                        getInformation( k )
-                    }
-                }
             }
         }
     }

@@ -11,6 +11,14 @@ enum StatusifyError: Error {
     case emptyEndpoint
 }
 
+enum StatusifyRequest: String {
+    case current = "currently-playing"
+    case play = "play"
+    case pause = "pause"
+    case next = "next"
+    case prev = "previous"
+}
+
 @discardableResult
 func brew(_ command: String...) throws -> String {
     return try runCommand(main: "/usr/local/bin/brew", command)
@@ -23,12 +31,9 @@ func keyServer() throws -> String {
 }
 
 @discardableResult
-func requests(_ endpoint: String) throws -> String {
-    guard !endpoint.isEmpty else {
-        throw StatusifyError.emptyEndpoint
-    }
+func requests(_ endpoint: StatusifyRequest) throws -> String {
     let home = FileManager.default.homeDirectoryForCurrentUser.absoluteString.dropFirst(7)
-    return try runCommand(main: "\(home)/Documents/Statusify/Statusify/requests/statusify-requests", [endpoint])
+    return try runCommand(main: "\(home)/Documents/Statusify/Statusify/requests/statusify-requests", [endpoint.rawValue])
 }
 
 @discardableResult

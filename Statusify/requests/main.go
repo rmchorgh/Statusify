@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/user"
@@ -14,6 +13,14 @@ import (
 
 var key string = ""
 
+const (
+	Current = "currently-playing"
+	Play    = "play"
+	Pause   = "pause"
+	Next    = "next"
+	Prev    = "previous"
+)
+
 func main() {
 	flag.Usage = usage
 	flag.Parse()
@@ -21,15 +28,15 @@ func main() {
 	arg := flag.Args()[0]
 	method := ""
 	switch arg {
-	case "currently-playing":
+	case Current:
 		method = http.MethodGet
-	case "play":
+	case Play:
 		method = http.MethodPut
-	case "pause":
+	case Pause:
 		method = http.MethodPut
-	case "next":
+	case Next:
 		method = http.MethodPost
-	case "previous":
+	case Prev:
 		method = http.MethodPost
 	}
 
@@ -72,7 +79,27 @@ func getKey() string {
 }
 
 type Response struct {
+	Progress  uint32 `json:"progress_ms"`
+	PlayState bool   `json:"is_playing"`
+	Item      struct {
+		Duration int      `json:"duration_ms"`
+		Name     string   `json:"name"`
+		Artists  []Artist `json:"artists"`
+		Album    struct {
+			AlbumArt []AlbumArt `json:"images"`
+		} `json:"album"`
+	} `json:"item"`
 	Error ErrorResponse `json:"error"`
+}
+
+type Artist struct {
+	Name string `json:"name"`
+}
+
+type AlbumArt struct {
+	Height int    `json:"height"`
+	Width  int    `json:"width"`
+	Url    string `json:"url"`
 }
 
 type ErrorResponse struct {
@@ -92,7 +119,6 @@ func sptReq(e string, m string) (string, error) {
 
 	k := getKey()
 	req.Header.Add("Authorization", k)
-	log.Println(req.Header)
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -108,8 +134,8 @@ func sptReq(e string, m string) (string, error) {
 		return "", err
 	}
 
+	var rj Response
 	if res.StatusCode != http.StatusOK {
-		var rj Response
 		err := json.Unmarshal(body, &rj)
 		if err != nil {
 			return "", fmt.Errorf("couldn't parse json response\n%v", string(body))
@@ -120,6 +146,30 @@ func sptReq(e string, m string) (string, error) {
 		}
 
 		return "", fmt.Errorf("error in response\n%v", rj.Error.Message)
+	}
+
+	if e == Current {
+		err := json.Unmarshal(body, &rj)
+		if err != nil {
+			return "", fmt.Errorf("couldn't parse json response\n%v", string(body))
+		}
+
+		artists := ""
+		for _, x := range rj.Item.Artists {
+			artists += ", " + x.Name
+		}
+		artists = artists[2:]
+
+		albumart := rj.Item.Album.AlbumArt[1].Url
+
+		return fmt.Sprintf(`{
+            "name": "%v",
+            "progress": %d,
+            "play_state": %t,
+            "duration": %d,
+            "artists": "%v",
+            "album_art": "%v"
+        }`, rj.Item.Name, rj.Progress, rj.PlayState, rj.Item.Duration, artists, albumart), nil
 	}
 
 	return string(body), nil
