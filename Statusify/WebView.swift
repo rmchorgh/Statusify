@@ -15,7 +15,7 @@ struct WebView: NSViewRepresentable {
     
     init() {
         webView = WKWebView(frame: .zero)
-        webView.load(URLRequest(url: URL(string: "http://localhost:6000")!))
+        webView.load(URLRequest(url: URL(string: "http://localhost:3000")!))
     }
     
     func makeNSView(context: Context) -> WKWebView {

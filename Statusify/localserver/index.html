@@ -12,7 +12,7 @@
 		<script>
 			const loginURL = (scopes) => {
 				const CLIENT_ID = '6c5f5abb92cd4cb8b659040e934e7aa5';
-				const REDIRECT_URI = 'http://localhost:3000';
+				const REDIRECT_URI = 'http://localhost:3000/token';
 				return (
 					'https://accounts.spotify.com/authorize?client_id=' +
 					CLIENT_ID +
@@ -35,20 +35,6 @@
 					height = 730,
 					left = screen.width / 2 - width / 2,
 					top = screen.height / 2 - height / 2;
-
-				window.addEventListener(
-					'message',
-					async ({ data }) => {
-						const { type } = JSON.parse(data);
-						if (type == 'access_token') {
-                            await fetch(`${CLIENT_ID}/token`, {
-								method: 'POST',
-								body: token
-							});
-						}
-					},
-					false
-				);
 
 				var w = window.open(
 					url,

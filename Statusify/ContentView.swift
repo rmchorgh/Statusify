@@ -11,7 +11,7 @@ struct ContentView: View {
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     let spt = "https://api.spotify.com/v1/me/player/"
-    @State var key = "BQCxakbs0px7ushj9dbWPjncd3AlWqv3Bj49hOVqtJHf3T2JwmNRSVjXgCVDL6oqHVRKEOzF5GKrdqrgamSvWM-K5tl4c08zKFb31O49FUIHYYmW6rPnHOMHy-99qzC-Q9aP0ld_L-HJD85x-U0vsOiYURYVj4VsLzcVjArZb5o6sOyn"
+    @State var key = ""
     
     @State var serviceRunning = false
     
@@ -24,20 +24,46 @@ struct ContentView: View {
     @State var playing = false
     @State var remaining: UInt32? = nil
     
+    @State var restart = false
+    
     func isRunning() {
         guard let res = try? brew("services") else {
             content = "Couldn't read Homebrew services"
             return
         }
         
-        if res.contains("spotifyd") {
+        if res.contains("spotifyd started") {
             serviceRunning = true
             content = "Service running"
             getInformation()
         }
         else {
             content = "Service not running"
+            toggleService()
         }
+    }
+    
+    @discardableResult
+    func loadKey() -> String? {
+        do {
+            let home = FileManager.default.homeDirectoryForCurrentUser.absoluteString.dropFirst(7)
+            let res = try runCommand(main: "/bin/cat", ["\(home)/.config/spotifyd/statusify.key"])
+            key = res
+            print("Key is", res)
+            return res
+        }
+        catch {
+            print(error)
+            content = "There was an error in obtaining the API key."
+            return nil
+        }
+//        guard let res = try? runCommand(main: "cat", ["~/.config/spotifyd/statusify.key"]) else {
+//            content = "There was an error in obtaining the API key."
+//            return nil
+//        }
+//        key = res
+//        print("Key is", res)
+//        return res
     }
     
     func toggleService() {
@@ -63,29 +89,35 @@ struct ContentView: View {
         content = ""
     }
     
-    func getInformation() {
-        var req = URLRequest(url: URL(string: "\(spt)currently-playing")!)
-        req.httpMethod = "GET"
-        req.allHTTPHeaderFields = ["Authorization": "Bearer \(key)"]
+    func getInformation(_ passed: String = "") {
+        var use = passed
+        if passed.isEmpty {
+            use = key
+        }
+        print("Using key", passed)
         
-        let task = URLSession.shared.dataTask(with: req) { data, res, err in
-            if let err = err {
-                print("Couldn't get player information.")
-                print(err)
-                return
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            var req = URLRequest(url: URL(string: "\(spt)currently-playing")!)
+            req.httpMethod = "GET"
+            req.allHTTPHeaderFields = ["Authorization": "Bearer \(use)"]
             
-            guard let res = res as? HTTPURLResponse, (200...299).contains(res.statusCode) else {
-                if res == nil {
-                    print("No result from Spotify.")
+            let task = URLSession.shared.dataTask(with: req) { data, res, err in
+                if let err = err {
+                    print("Couldn't get player information.")
+                    print(err)
+                    return
                 }
-                else {
-                    let res = res as! HTTPURLResponse
-                    print("Spotify returned code \(res.statusCode).")
-                    print(String(data: data!, encoding: .utf8)!)
-                    if res.statusCode == 401 {
-                        content = "Update your Spotify API key."
-                        DispatchQueue.main.async {
+                
+                guard let res = res as? HTTPURLResponse, (200...299).contains(res.statusCode) else {
+                    if res == nil {
+                        print("No result from Spotify.")
+                    }
+                    else {
+                        let res = res as! HTTPURLResponse
+                        print("Spotify returned code \(res.statusCode).")
+                        print(String(data: data!, encoding: .utf8)!)
+                        if res.statusCode == 401 {
+                            content = "Update your Spotify API key."
                             guard let server = try? keyServer() else {
                                 print("Couldn't start key server.")
                                 content = "Couldn't start key server. Try again later."
@@ -93,39 +125,41 @@ struct ContentView: View {
                             }
                             
                             key = server
-//                            _ = WebViewWindow()
+                            print("Got key:\n\t", server)
+                            restart = true
                         }
+                        
                     }
+                    return
                 }
-                return
+                
+                guard let data = data  else {
+                    print("Couldn't interpret data as non-nil.")
+                    return
+                }
+                
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    
+                    let sr = try PlaybackResponse(json!)
+                    
+                    artist = sr.artists.map({ a in a.name }).joined(separator: ", ")
+                    title = sr.name
+                    url = sr.albumArt[1].image
+                    playing = sr.state
+                    remaining = (sr.duration - sr.progress) / 1000
+                    
+                    content = title!
+                }
+                catch {
+                    print("Couldn't decode JSON.")
+                    print(error)
+                }
+                
             }
             
-            guard let data = data  else {
-                print("Couldn't interpret data as non-nil.")
-                return
-            }
-            
-            do {
-                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-                
-                let sr = try PlaybackResponse(json!)
-                
-                artist = sr.artists.map({ a in a.name }).joined(separator: ", ")
-                title = sr.name
-                url = sr.albumArt[1].image
-                playing = sr.state
-                remaining = (sr.duration - sr.progress) / 1000
-                
-                content = title!
-            }
-            catch {
-                print("Couldn't decode JSON.")
-                print(error)
-            }
-            
+            task.resume()
         }
-        
-        task.resume()
     }
     
     func backward() {
@@ -204,7 +238,7 @@ struct ContentView: View {
                 
                 if serviceRunning {
                     Image(systemName: "stop.fill")
-                        .button(-5)
+                        .button()
                         .animation(.easeInOut, value: serviceRunning)
                         .onTapGesture {
                             toggleService()
@@ -214,7 +248,7 @@ struct ContentView: View {
             }
             Spacer()
             HStack {
-                Image(systemName: "backward")
+                Image(systemName: "backward.fill")
                     .button()
                     .onTapGesture {
                         backward()
@@ -232,7 +266,7 @@ struct ContentView: View {
                         }
                     }
                 
-                Image(systemName: "forward")
+                Image(systemName: "forward.fill")
                     .button()
                     .onTapGesture {
                         forward()
@@ -243,6 +277,7 @@ struct ContentView: View {
         .background(albumArt)
         .frame(width: 300, height: 300)
         .onAppear {
+            loadKey()
             isRunning()
         }
         .onReceive(timer) { _ in
@@ -254,17 +289,28 @@ struct ContentView: View {
                 remaining! -= 1
             }
         }
+        .onChange(of: restart) { newValue in
+            if newValue {
+                DispatchQueue.main.async {
+                    restart = false
+                    let k = loadKey()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                        getInformation( k )
+                    }
+                }
+            }
+        }
     }
 }
 
 extension Image {
-    func button(_ buttonDim: CGFloat = 15.0) -> some View {
-        let def = 15.0
+    func button(_ buttonDim: CGFloat = 10.0) -> some View {
+        let def = 10.0
         return self
             .resizable()
             .foregroundColor(.black)
             .frame(width: buttonDim == def ? def : def + buttonDim, height: buttonDim == def ? def : def + buttonDim)
-            .padding(5)
+            .padding(8)
             .background {
                 Color.white
             }

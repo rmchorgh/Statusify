@@ -7,6 +7,10 @@
 
 import Foundation
 
+enum StatusifyError: Error {
+    case emptyEndpoint
+}
+
 @discardableResult
 func brew(_ command: String...) throws -> String {
     return try runCommand(main: "/usr/local/bin/brew", command)
@@ -14,7 +18,17 @@ func brew(_ command: String...) throws -> String {
 
 @discardableResult
 func keyServer() throws -> String {
-    return try runCommand(main: "/Users/richard/Documents/Statusify/Statusify/localserver/statusify.app", [])
+    let home = FileManager.default.homeDirectoryForCurrentUser.absoluteString.dropFirst(7)
+    return try runCommand(main: "\(home)/Documents/Statusify/Statusify/localserver/statusify-auth", [])
+}
+
+@discardableResult
+func requests(_ endpoint: String) throws -> String {
+    guard !endpoint.isEmpty else {
+        throw StatusifyError.emptyEndpoint
+    }
+    let home = FileManager.default.homeDirectoryForCurrentUser.absoluteString.dropFirst(7)
+    return try runCommand(main: "\(home)/Documents/Statusify/Statusify/requests/statusify-requests", [endpoint])
 }
 
 @discardableResult

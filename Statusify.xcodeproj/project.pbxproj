@@ -13,7 +13,8 @@
 		7D93B4422962005900EBFB62 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D93B4412962005900EBFB62 /* Preview Assets.xcassets */; };
 		7D93B44A2962028200EBFB62 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D93B4492962028200EBFB62 /* AppDelegate.swift */; };
 		7D93B44E2962037C00EBFB62 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D93B44D2962037C00EBFB62 /* StatusBarController.swift */; };
-		7DA10B3A29625CC50082B9D3 /* SpotifyResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA10B3929625CC50082B9D3 /* SpotifyResponse.swift */; };
+		7DA10B3A29625CC50082B9D3 /* Responses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA10B3929625CC50082B9D3 /* Responses.swift */; };
+		7DA10B3E2962B2890082B9D3 /* WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA10B3D2962B2890082B9D3 /* WebView.swift */; };
 		7DD1476529621DC2008F56BA /* Shell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD1476429621DC2008F56BA /* Shell.swift */; };
 /* End PBXBuildFile section */
 
@@ -26,7 +27,8 @@
 		7D93B4432962005900EBFB62 /* Statusify.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Statusify.entitlements; sourceTree = "<group>"; };
 		7D93B4492962028200EBFB62 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7D93B44D2962037C00EBFB62 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
-		7DA10B3929625CC50082B9D3 /* SpotifyResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyResponse.swift; sourceTree = "<group>"; };
+		7DA10B3929625CC50082B9D3 /* Responses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Responses.swift; sourceTree = "<group>"; };
+		7DA10B3D2962B2890082B9D3 /* WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebView.swift; sourceTree = "<group>"; };
 		7DD1476429621DC2008F56BA /* Shell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shell.swift; sourceTree = "<group>"; };
 		7DD1476629622AAD008F56BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -61,7 +63,7 @@
 		7D93B4392962005600EBFB62 /* Statusify */ = {
 			isa = PBXGroup;
 			children = (
-				7DA10B3929625CC50082B9D3 /* SpotifyResponse.swift */,
+				7DA10B3929625CC50082B9D3 /* Responses.swift */,
 				7DD1476629622AAD008F56BA /* Info.plist */,
 				7D93B43A2962005600EBFB62 /* StatusifyApp.swift */,
 				7D93B43C2962005600EBFB62 /* ContentView.swift */,
@@ -69,6 +71,7 @@
 				7D93B4432962005900EBFB62 /* Statusify.entitlements */,
 				7D93B4402962005900EBFB62 /* Preview Content */,
 				7D93B4492962028200EBFB62 /* AppDelegate.swift */,
+				7DA10B3D2962B2890082B9D3 /* WebView.swift */,
 				7D93B44D2962037C00EBFB62 /* StatusBarController.swift */,
 				7DD1476429621DC2008F56BA /* Shell.swift */,
 			);
@@ -157,8 +160,9 @@
 				7D93B44A2962028200EBFB62 /* AppDelegate.swift in Sources */,
 				7D93B43D2962005600EBFB62 /* ContentView.swift in Sources */,
 				7D93B44E2962037C00EBFB62 /* StatusBarController.swift in Sources */,
-				7DA10B3A29625CC50082B9D3 /* SpotifyResponse.swift in Sources */,
+				7DA10B3A29625CC50082B9D3 /* Responses.swift in Sources */,
 				7D93B43B2962005600EBFB62 /* StatusifyApp.swift in Sources */,
+				7DA10B3E2962B2890082B9D3 /* WebView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
