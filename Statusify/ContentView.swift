@@ -9,14 +9,15 @@ import SwiftUI
 
 struct ContentView: View {
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-      
+    
     let spt = "https://api.spotify.com/v1/me/player/"
-    let key = "BQCxakbs0px7ushj9dbWPjncd3AlWqv3Bj49hOVqtJHf3T2JwmNRSVjXgCVDL6oqHVRKEOzF5GKrdqrgamSvWM-K5tl4c08zKFb31O49FUIHYYmW6rPnHOMHy-99qzC-Q9aP0ld_L-HJD85x-U0vsOiYURYVj4VsLzcVjArZb5o6sOyn"
+    @State var key = "BQCxakbs0px7ushj9dbWPjncd3AlWqv3Bj49hOVqtJHf3T2JwmNRSVjXgCVDL6oqHVRKEOzF5GKrdqrgamSvWM-K5tl4c08zKFb31O49FUIHYYmW6rPnHOMHy-99qzC-Q9aP0ld_L-HJD85x-U0vsOiYURYVj4VsLzcVjArZb5o6sOyn"
     
     @State var serviceRunning = false
     
     @State var content = ""
     
+    @State var devices: [(String, String)] = []
     @State var artist: String? = nil
     @State var title: String? = nil
     @State var url: URL? = nil
@@ -24,8 +25,7 @@ struct ContentView: View {
     @State var remaining: UInt32? = nil
     
     func isRunning() {
-        print("isRunning:")
-        guard let res = try? safeShell("services") else {
+        guard let res = try? brew("services") else {
             content = "Couldn't read Homebrew services"
             return
         }
@@ -43,7 +43,7 @@ struct ContentView: View {
     func toggleService() {
         if serviceRunning {
             print("Stopping")
-            guard let res = try? safeShell("services", "stop", "spotifyd") else {
+            guard let res = try? brew("services", "stop", "spotifyd") else {
                 content = "Stopping service failed."
                 return
             }
@@ -52,7 +52,7 @@ struct ContentView: View {
         }
         else {
             print("Starting")
-            guard let res = try? safeShell("services", "restart", "spotifyd") else {
+            guard let res = try? brew("services", "restart", "spotifyd") else {
                 content = "Starting service failed."
                 return
             }
@@ -80,9 +80,22 @@ struct ContentView: View {
                     print("No result from Spotify.")
                 }
                 else {
-                    print("Spotify returned code \((res as! HTTPURLResponse).statusCode).")
+                    let res = res as! HTTPURLResponse
+                    print("Spotify returned code \(res.statusCode).")
                     print(String(data: data!, encoding: .utf8)!)
-                    
+                    if res.statusCode == 401 {
+                        content = "Update your Spotify API key."
+                        DispatchQueue.main.async {
+                            guard let server = try? keyServer() else {
+                                print("Couldn't start key server.")
+                                content = "Couldn't start key server. Try again later."
+                                return
+                            }
+                            
+                            key = server
+//                            _ = WebViewWindow()
+                        }
+                    }
                 }
                 return
             }
@@ -95,7 +108,7 @@ struct ContentView: View {
             do {
                 let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
                 
-                let sr = try SpotifyResponse(json!)
+                let sr = try PlaybackResponse(json!)
                 
                 artist = sr.artists.map({ a in a.name }).joined(separator: ", ")
                 title = sr.name
@@ -162,11 +175,12 @@ struct ContentView: View {
         task.resume()
     }
     
+    let windowDim = 300.0
     @ViewBuilder var albumArt: some View {
         if url != nil {
             AsyncImage(url: url)
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 300, height: 300)
+                .frame(width: windowDim, height: windowDim)
                 .overlay {
                     LinearGradient(colors: [.black.opacity(0.75), .black.opacity(0.2)], startPoint: .top, endPoint: .bottom)
                 }
@@ -187,38 +201,42 @@ struct ContentView: View {
                     }
                 }
                 Spacer()
-                Button {
-                    toggleService()
-                } label: {
-                    Text(serviceRunning ? "Turn Off" : "Turn On")
+                
+                if serviceRunning {
+                    Image(systemName: "stop.fill")
+                        .button(-5)
                         .animation(.easeInOut, value: serviceRunning)
+                        .onTapGesture {
+                            toggleService()
+                        }
                 }
+                
             }
             Spacer()
             HStack {
-                Button {
-                    backward()
-                } label: {
-                    Image(systemName: "backward")
-                }
-                
-                Button {
-                    if playing {
-                        pause()
+                Image(systemName: "backward")
+                    .button()
+                    .onTapGesture {
+                        backward()
                     }
-                    else {
-                        play()
-                    }
-                } label: {
-                    Image(systemName: playing ? "pause" : "play.fill")
-                        .animation(.easeInOut, value: playing)
-                }
                 
-                Button {
-                    forward()
-                } label: {
-                    Image(systemName: "forward")
-                }
+                Image(systemName: playing ? "pause.fill" : "play.fill")
+                    .button(5)
+                    .animation(.easeInOut, value: playing)
+                    .onTapGesture {
+                        if playing {
+                            pause()
+                        }
+                        else {
+                            play()
+                        }
+                    }
+                
+                Image(systemName: "forward")
+                    .button()
+                    .onTapGesture {
+                        forward()
+                    }
             }
         }
         .padding()
@@ -232,9 +250,24 @@ struct ContentView: View {
                 remaining = nil
                 getInformation()
             }
-            else if remaining != nil {
+            else if remaining != nil && playing {
                 remaining! -= 1
             }
         }
+    }
+}
+
+extension Image {
+    func button(_ buttonDim: CGFloat = 15.0) -> some View {
+        let def = 15.0
+        return self
+            .resizable()
+            .foregroundColor(.black)
+            .frame(width: buttonDim == def ? def : def + buttonDim, height: buttonDim == def ? def : def + buttonDim)
+            .padding(5)
+            .background {
+                Color.white
+            }
+            .clipShape(Circle())
     }
 }

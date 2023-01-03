@@ -16,13 +16,11 @@ class StatusBarController {
         self.popover = popover
         statusBar = .init()
                 
-        statusItem = statusBar.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = statusBar.statusItem(withLength: NSStatusItem.squareLength + 40)
         if statusItem != nil, let button = statusItem!.button {
+            button.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "Statusify")
             button.action = #selector(showApp(sender: ))
-            button.title = "Statusify"
             button.target = self
-            
-            button.updateLayer()
         }
     }
     

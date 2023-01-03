@@ -1,5 +1,5 @@
 //
-//  SpotifyResponse.swift
+//  Responses.swift
 //  Statusify
 //
 //  Created by Richard McHorgh on 1/1/23.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct SpotifyResponse {
+struct PlaybackResponse {
     let albumArt: [AlbumArt]
     let artists: [Artist]
     let name: String
